@@ -96,8 +96,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         MqttConnectionState.connected) {
       print('✅ MQTT client connected to AWS IoT');
 
-      const topic = 'esp32/esp32-to-aws';
-      client.subscribe(topic, MqttQos.atLeastOnce);
+      const topicTemp = 'esp32/esp32-to-aws-temp';
+      const topicHum = 'esp32/esp32-to-aws-hum';
+      client.subscribe(topicTemp, MqttQos.atLeastOnce);
+      client.subscribe(topicHum, MqttQos.atLeastOnce);
 
       client.updates!.listen((
         List<MqttReceivedMessage<MqttMessage>> c,
@@ -115,13 +117,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         try {
           final data = jsonDecode(payload);
           if (data is Map<String, dynamic>) {
-            final temp = (data['data'] as num).toDouble();
-            setState(() {
-              temperatureC = temp;
-            });
-            print(
-              '🌡️ Nhiệt độ cập nhật: $temperatureC °C',
-            );
+            if (c[0].topic == topicTemp) {
+              final temp = (data['data_TempC'] as num)
+                  .toDouble();
+              setState(() {
+                temperatureC = temp;
+              });
+              print(
+                '🌡️ Nhiệt độ cập nhật: $temperatureC °C',
+              );
+            } else if (c[0].topic == topicHum) {
+              final hum = (data['data_Hum'] as num)
+                  .toDouble();
+              setState(() {
+                humidity = hum;
+              });
+              print('🌡️ Độ ẩm cập nhật: $humidity %');
+            }
           }
         } catch (e) {
           print('❌ Lỗi parse payload: $e');
@@ -214,7 +226,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   DeviceCard(
                     title: 'Độ ẩm',
-                    value: humidity.toStringAsFixed(0),
+                    value:
+                        '${humidity.toStringAsFixed(1)} %',
                     unit: '%',
                     icon: Icons.water_drop,
                     color: Colors.blueAccent,
@@ -225,7 +238,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         arguments: DetailArgs(
                           title: 'Độ ẩm',
                           value:
-                              '${humidity.toStringAsFixed(0)} %',
+                              '${humidity.toStringAsFixed(1)} %',
                           description:
                               'Độ ẩm không khí từ cảm biến.',
                           icon: Icons.water_drop,
