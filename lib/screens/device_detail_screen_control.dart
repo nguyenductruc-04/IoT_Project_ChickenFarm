@@ -1,36 +1,44 @@
 // ignore_for_file: prefer_const_constructors
 import 'package:flutter/material.dart';
 import 'package:flutter_picker_plus/flutter_picker_plus.dart';
+import 'package:iot_app/mqtt/mqtt.dart';
 
-class DetailArgs {
+class DetailControlArgs {
   final String title;
-  final String value;
+  final bool status;
   final String description;
   final IconData icon;
+  final MqttService mqttService;
+  final String topic;
 
-  DetailArgs({
+  DetailControlArgs({
     required this.title,
-    required this.value,
+    required this.status,
     required this.description,
     required this.icon,
+    required this.mqttService,
+    required this.topic,
   });
 }
 
-class DeviceDetailScreen extends StatefulWidget {
-  static const String routeName = '/device-detail';
-  const DeviceDetailScreen({super.key});
+class DeviceDetailScreenControl extends StatefulWidget {
+  static const String routeName = '/device-control-detail';
+  const DeviceDetailScreenControl({super.key});
 
   @override
-  State<DeviceDetailScreen> createState() =>
-      _DeviceDetailScreenState();
+  State<DeviceDetailScreenControl> createState() =>
+      _DeviceDetailScreenControlState();
 }
 
-class _DeviceDetailScreenState
-    extends State<DeviceDetailScreen> {
+class _DeviceDetailScreenControlState
+    extends State<DeviceDetailScreenControl> {
   int? selectedThreshold; // lưu ngưỡng nhiệt độ
 
   // Hàm chọn số (Picker)
-  void showPickerNumber(BuildContext context) {
+  void showPickerNumber(
+    BuildContext context,
+    DetailControlArgs args,
+  ) {
     Picker(
       adapter: NumberPickerAdapter(
         data: [
@@ -60,15 +68,19 @@ class _DeviceDetailScreenState
         );
 
         // TODO: Gửi ngưỡng này qua MQTT tới ESP32
+        args.mqttService.pickerNumber(
+          selectedThreshold.toString(),
+          args.topic,
+        );
       },
     ).showDialog(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final DetailArgs args =
+    final DetailControlArgs args =
         ModalRoute.of(context)!.settings.arguments
-            as DetailArgs;
+            as DetailControlArgs;
 
     return Scaffold(
       appBar: AppBar(title: Text(args.title)),
@@ -96,7 +108,7 @@ class _DeviceDetailScreenState
                     ),
                     SizedBox(height: 4),
                     Text(
-                      args.value,
+                      args.status ? "Bật" : "Tắt",
                       style: Theme.of(
                         context,
                       ).textTheme.headlineSmall,
@@ -110,6 +122,7 @@ class _DeviceDetailScreenState
             SizedBox(height: 24),
             Divider(),
             SizedBox(height: 12),
+            Text("Chọn ngưỡng nhiệt độ bật đèn sưởi"),
             Center(
               child: Column(
                 children: [
@@ -125,7 +138,7 @@ class _DeviceDetailScreenState
                   SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () =>
-                        showPickerNumber(context),
+                        showPickerNumber(context, args),
                     child: Text("Chọn lại"),
                   ),
                   SizedBox(height: 16),
