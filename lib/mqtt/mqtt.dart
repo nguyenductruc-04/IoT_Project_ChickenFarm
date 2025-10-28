@@ -16,6 +16,12 @@ class MqttService {
   final Function(double temp, double hum, String level)?
   onSensorUpdate;
   Function(String topic, bool status)? onRelayUpdate;
+  Function(
+    String topic,
+    bool autoMode,
+    dynamic newThreshold,
+  )?
+  onselectedThresholdUpdate;
 
   // ✅ Biến lưu giá trị gần nhất
   double? _lastTemp;
@@ -95,6 +101,16 @@ class MqttService {
       const topicStatusFan = 'device/status/fan';
       const topicStatusMotor = 'device/status/motor';
       const topicStatusPump = 'device/status/pump';
+
+      const topicThresholdLed =
+          'device/automode/confirm/led';
+      const topicThresholdFan =
+          'device/automode/confirm/fan';
+      const topicThresholdMotor =
+          'device/automode/confirm/motor';
+      const topicThresholdPump =
+          'device/automode/confirm/pump';
+
       client.subscribe(topicTemp, MqttQos.atLeastOnce);
       client.subscribe(topicHum, MqttQos.atLeastOnce);
       client.subscribe(
@@ -111,6 +127,23 @@ class MqttService {
         topicStatusPump,
         MqttQos.atLeastOnce,
       );
+      client.subscribe(
+        topicThresholdLed,
+        MqttQos.atLeastOnce,
+      );
+      client.subscribe(
+        topicThresholdFan,
+        MqttQos.atLeastOnce,
+      );
+      client.subscribe(
+        topicThresholdMotor,
+        MqttQos.atLeastOnce,
+      );
+      client.subscribe(
+        topicThresholdPump,
+        MqttQos.atLeastOnce,
+      );
+
       client.updates!.listen((
         List<MqttReceivedMessage<MqttMessage>> c,
       ) {
@@ -132,6 +165,41 @@ class MqttService {
 
             if (onRelayUpdate != null) {
               onRelayUpdate!(c[0].topic, statusBool);
+            }
+          }
+          if (data is Map<String, dynamic>) {
+            bool autoMode = false;
+            dynamic selectedThreshold;
+
+            if (data['autoMode'] != null) {
+              if (data['autoMode'] is bool) {
+                autoMode = data['autoMode'];
+              } else if (data['autoMode'] is String) {
+                final value = data['autoMode']
+                    .toString()
+                    .toLowerCase();
+                autoMode =
+                    value == "on" ||
+                    value == "true" ||
+                    value == "1";
+              }
+            }
+
+            // Parse selectedThreshold nếu có
+            if (data.containsKey('selectedThreshold')) {
+              selectedThreshold = data['selectedThreshold'];
+            }
+
+            print(
+              '🔥 Ngưỡng nhiệt độ nhận được: $selectedThreshold',
+            );
+
+            if (onselectedThresholdUpdate != null) {
+              onselectedThresholdUpdate!(
+                c[0].topic,
+                autoMode,
+                selectedThreshold,
+              );
             }
           }
           if (data is Map<String, dynamic>) {
@@ -174,6 +242,52 @@ class MqttService {
     return 0;
   }
 
+  Future<void> requestRelay() async {
+    if (client.connectionStatus?.state ==
+        MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString('{"status":"ON"}');
+
+      // Gửi yêu cầu đến ESP32
+      client.publishMessage(
+        'esp32/request/relay',
+        MqttQos.atLeastOnce,
+        builder.payload!,
+      );
+
+      print(
+        '📤 Yêu cầu ESP32 gửi trạng thái hiện tại của Relay',
+      );
+    } else {
+      print(
+        '⚠️ MQTT chưa kết nối, không thể yêu cầu trạng thái!',
+      );
+    }
+  }
+
+  Future<void> requestAutoMode() async {
+    if (client.connectionStatus?.state ==
+        MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString('{"status":"ON"}');
+
+      // Gửi yêu cầu đến ESP32
+      client.publishMessage(
+        'esp32/request/autoMode',
+        MqttQos.atLeastOnce,
+        builder.payload!,
+      );
+
+      print(
+        '📤 Yêu cầu ESP32 gửi trạng thái hiện tại của Auto Mode...',
+      );
+    } else {
+      print(
+        '⚠️ MQTT chưa kết nối, không thể yêu cầu trạng thái!',
+      );
+    }
+  }
+
   /// Gửi lệnh điều khiển motor
   Future<void> toggleMotor(bool value, String topic) async {
     if (client.connectionStatus?.state ==
@@ -199,7 +313,7 @@ class MqttService {
 
   /// Gửi ngưỡng nhiệt độ settup
   Future<void> pickerNumber(
-    String value,
+    dynamic value,
     String topic,
   ) async {
     if (client.connectionStatus?.state ==
@@ -224,5 +338,31 @@ class MqttService {
   /// ✅ Lấy trạng thái relay hiện tại theo topic
   bool? getRelayStatus(String topic) {
     return _relayStatus[topic];
+  }
+
+  /// ✅ Gửi lệnh bật/tắt chế độ tự động
+  Future<void> toggleAutoMode(
+    bool isOn,
+    String topic,
+  ) async {
+    if (client.connectionStatus?.state ==
+        MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(
+        '{"status":"${isOn ? "ON" : "OFF"}"}',
+      );
+
+      client.publishMessage(
+        topic,
+        MqttQos.atMostOnce,
+        builder.payload!,
+      );
+
+      print(
+        "📤 Gửi lệnh AutoMode: ${isOn ? "ON" : "OFF"} đến $topic",
+      );
+    } else {
+      print("⚠️ MQTT chưa kết nối!");
+    }
   }
 }

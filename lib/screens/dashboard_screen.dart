@@ -3,9 +3,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:iot_app/mqtt/mqtt.dart';
-import '../widgets/device_card.dart';
+import '../widgets/device_card_sensor.dart';
 import '../widgets/device_card_control.dart';
-import 'device_detail_screen.dart';
+import 'device_detail_screen_monitor.dart';
 import 'device_detail_screen_control.dart';
 import 'dashboard_drawer.dart';
 import '../widgets/temperature_chart.dart';
@@ -25,11 +25,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double humidity = 0;
   String waterLevel = "Thấp";
   double feedLevel = 0;
+
   bool statusLed = false;
   bool statusFan = false;
   bool statusMotor = false;
   bool statusPump = false;
 
+  int? updateselectedThresholdLed;
+  int? updateselectedThresholdFan;
   late Future<List<SensorData>> _futureData;
   late MqttService mqttService;
   Timer? _timer;
@@ -37,7 +40,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-
+    Future.delayed(Duration(seconds: 5), () {
+      mqttService.requestRelay();
+    });
     _futureData = ApiService.fetchTemperatureData(
       'esp32_01',
     );
@@ -67,6 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           statusPump = status;
       });
     };
+
     mqttService.connectMQTT();
   }
 
@@ -270,18 +276,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         DeviceDetailScreenControl.routeName,
                         arguments: DetailControlArgs(
                           title: 'Đèn sưởi',
+                          secondaryTitle: 'nhiệt độ',
                           status: statusLed,
-                          description:
-                              'Trạng thái hiện tại của đèn sưởi',
+                          description: '',
                           icon:
                               Icons.lightbulb_circle_sharp,
                           mqttService: mqttService,
                           topic:
-                              'esp32/led/control/temperatureThreshold',
+                              'device/automode/confirm/led',
                         ),
                       );
                     },
                   ),
+                  const SizedBox(height: 16),
                   DeviceCardControl(
                     title: 'Quạt gió',
                     value: true,
@@ -296,17 +303,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         DeviceDetailScreenControl.routeName,
                         arguments: DetailControlArgs(
                           title: 'Quạt gió',
+                          secondaryTitle: 'độ ẩm',
                           status: statusFan,
                           description:
                               'Trạng thái hiện tại của quạt gió',
                           icon: Icons.air,
                           mqttService: mqttService,
                           topic:
-                              'esp32/fan/control/humidityThreshold',
+                              'device/automode/confirm/fan',
                         ),
                       );
                     },
                   ),
+                  const SizedBox(height: 16),
                   DeviceCardControl(
                     title: 'Bơm thức ăn',
                     value: true,
@@ -321,17 +330,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         DeviceDetailScreenControl.routeName,
                         arguments: DetailControlArgs(
                           title: 'Bơm thức ăn',
+                          secondaryTitle: 'cân nặng',
                           status: statusMotor,
                           description:
                               'Trạng thái hiện tại của bơm thức ăn',
                           icon: Icons.settings,
                           mqttService: mqttService,
                           topic:
-                              'esp32/motor/control/cellThreshold',
+                              'device/automode/confirm/motor',
                         ),
                       );
                     },
                   ),
+                  const SizedBox(height: 16),
                   DeviceCardControl(
                     title: 'Bơm nước',
                     value: true,
@@ -346,13 +357,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         DeviceDetailScreenControl.routeName,
                         arguments: DetailControlArgs(
                           title: 'Bơm nước',
+                          secondaryTitle: 'mực nước',
                           status: statusPump,
                           description:
                               'Trạng thái hiện tại của bơm nước',
                           icon: Icons.water_drop_outlined,
                           mqttService: mqttService,
                           topic:
-                              'esp32/pump/control/waterLevelThreshold',
+                              'device/automode/confirm/pump',
                         ),
                       );
                     },

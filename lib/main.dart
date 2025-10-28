@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:iot_app/screens/device_detail_screen_control.dart';
 import 'screens/dashboard_screen.dart';
-import 'screens/device_detail_screen.dart';
+import 'screens/device_detail_screen_monitor.dart';
 import 'screens/setting_screen.dart';
 
 void main() {

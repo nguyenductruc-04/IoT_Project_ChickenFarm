@@ -29,41 +29,6 @@ class _DeviceDetailScreenState
     extends State<DeviceDetailScreen> {
   int? selectedThreshold; // lưu ngưỡng nhiệt độ
 
-  // Hàm chọn số (Picker)
-  void showPickerNumber(BuildContext context) {
-    Picker(
-      adapter: NumberPickerAdapter(
-        data: [
-          NumberPickerColumn(
-            begin: 0,
-            end: 50,
-            suffix: Text(" °C"), // nhập nhiệt độ
-          ),
-        ],
-      ),
-      hideHeader: true,
-      title: Text("Chọn ngưỡng nhiệt độ để bật đèn sưởi"),
-      selectedTextStyle: TextStyle(
-        color: Colors.blue,
-        fontSize: 18,
-      ),
-      onConfirm: (Picker picker, List value) {
-        final selected = picker.getSelectedValues()[0];
-        setState(() {
-          selectedThreshold = selected;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Ngưỡng nhiệt đo: $selected °C"),
-          ),
-        );
-
-        // TODO: Gửi ngưỡng này qua MQTT tới ESP32
-      },
-    ).showDialog(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final DetailArgs args =
@@ -123,11 +88,7 @@ class _DeviceDetailScreenState
                       ),
                     ),
                   SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        showPickerNumber(context),
-                    child: Text("Chọn lại"),
-                  ),
+
                   SizedBox(height: 16),
                 ],
               ),
