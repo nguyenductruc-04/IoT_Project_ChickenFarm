@@ -24,12 +24,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double temperatureC = 0;
   double humidity = 0;
   String waterLevel = "Thấp";
-  double feedLevel = 0;
+  double loadcell = 0;
 
   bool statusLed = false;
   bool statusFan = false;
   bool statusMotor = false;
   bool statusPump = false;
+
+  bool statusRealLed = false;
+  bool statusRealFan = false;
+  bool statusRealMotor = false;
+  bool statusRealPump = false;
 
   int? updateselectedThresholdLed;
   int? updateselectedThresholdFan;
@@ -51,11 +56,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           'a2wcwnaa9j6foi-ats.iot.us-east-1.amazonaws.com',
       clientId: 'Flutter-client',
       port: 8883,
-      onSensorUpdate: (temp, hum, level) {
+      onSensorUpdate: (temp, hum, level, cell) {
         setState(() {
           temperatureC = temp;
           humidity = hum;
           waterLevel = level.toString();
+          loadcell = cell;
         });
       },
     );
@@ -70,6 +76,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           statusMotor = status;
         if (topic == 'device/status/pump')
           statusPump = status;
+      });
+    };
+    mqttService.onRelayRealUpdate = (topic, statusReal) {
+      print("📩 Relay update from $topic => $statusReal");
+      setState(() {
+        if (topic == 'device/status/real/led')
+          statusRealLed = statusReal;
+        if (topic == 'device/status/real/fan')
+          statusRealFan = statusReal;
+        if (topic == 'device/status/real/motor')
+          statusRealMotor = statusReal;
+        if (topic == 'device/status/real/pump')
+          statusRealPump = statusReal;
       });
     };
 
@@ -201,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         DeviceCard(
                           title: 'Mức thức ăn',
                           value:
-                              '${feedLevel.toStringAsFixed(0)} Kg',
+                              '${loadcell.toStringAsFixed(0)} Kg',
                           unit: 'Kg',
                           icon: Icons.inventory,
                           color: Colors.orange,
@@ -212,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               arguments: DetailArgs(
                                 title: 'Mức thức ăn',
                                 value:
-                                    '${feedLevel.toStringAsFixed(0)} %',
+                                    '${loadcell.toStringAsFixed(0)} %',
                                 description:
                                     'Dung lượng thức ăn còn lại trong khoang.',
                                 icon: Icons.inventory,
@@ -268,6 +287,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.lightbulb_circle_sharp,
                     color: Colors.redAccent,
                     status: statusLed,
+                    statusReal: statusRealLed,
                     topicPub: 'esp32/led/control',
                     mqttService: mqttService,
                     onTap: () {
@@ -295,6 +315,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.air,
                     color: Colors.green,
                     status: statusFan,
+                    statusReal: statusRealFan,
                     topicPub: 'esp32/fan/control',
                     mqttService: mqttService,
                     onTap: () {
@@ -322,6 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.settings,
                     color: Colors.orangeAccent,
                     status: statusMotor,
+                    statusReal: statusRealMotor,
                     topicPub: 'esp32/motor/control',
                     mqttService: mqttService,
                     onTap: () {
@@ -349,6 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.water_drop_outlined,
                     color: Colors.blue,
                     status: statusPump,
+                    statusReal: statusRealPump,
                     topicPub: 'esp32/pump/control',
                     mqttService: mqttService,
                     onTap: () {

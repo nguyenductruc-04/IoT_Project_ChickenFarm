@@ -9,6 +9,7 @@ class DeviceCardControl extends StatefulWidget {
   final IconData icon;
   final Color color;
   final bool status;
+  final bool statusReal;
   final MqttService mqttService; // ✅ thêm service vào
   final String topicPub; // topic để publish MQTT
   final VoidCallback? onTap;
@@ -20,6 +21,7 @@ class DeviceCardControl extends StatefulWidget {
     required this.icon,
     required this.color,
     required this.status,
+    required this.statusReal,
     required this.mqttService,
     required this.topicPub,
     this.onTap,
@@ -37,8 +39,10 @@ class _DeviceCardControlState
     super.initState();
   }
 
-  bool? _pendingValue;
-  bool _isLoading = false; // chờ phản hồi từ ESP32
+  bool? _pendingValueStatus;
+  bool _isLoadingSwitch = false; // chờ phản hồi từ ESP32
+  bool? _pendingValueStatusReal;
+  bool _isLoadingOnOff = false; // chờ phản hồi từ ESP32
 
   @override
   void didUpdateWidget(
@@ -49,35 +53,61 @@ class _DeviceCardControlState
     // Khi ESP32 trả về status mới khác trước đó:
     if (oldWidget.status != widget.status) {
       setState(() {
-        _isLoading = false; // tắt loading
-        _pendingValue = null; // xóa trạng thái tạm
+        _isLoadingSwitch = false; // tắt loading
+        _pendingValueStatus = null; // xóa trạng thái tạm
+      });
+    }
+    // Khi ESP32 phản hồi trạng thái thật (statusReal)
+    if (oldWidget.statusReal != widget.statusReal) {
+      setState(() {
+        _isLoadingOnOff =
+            false; // tắt loading ở chữ BẬT/TẮT
       });
     }
   }
 
   Future<void> _toggleDevice(bool value) async {
     setState(() {
-      _pendingValue = value;
-      _isLoading = true; // bật loading
+      _pendingValueStatus = value;
+      _isLoadingSwitch = true; // bật loading
+      _isLoadingOnOff = true; // bật loading ở chữ BẬT/TẮT
+      _pendingValueStatusReal =
+          value; // lưu giá trị tạm để so sánh sau
     });
     await widget.mqttService.toggleMotor(
       value,
       widget.topicPub,
     ); // Gửi MQTT
     // Sau 3 giây, nếu ESP32 chưa phản hồi, hoàn tác trạng thái
-    Future.delayed(Duration(seconds: 60), () {
-      if (mounted && _pendingValue != null) {
+    Future.delayed(Duration(seconds: 30), () {
+      if (mounted && _pendingValueStatus != null) {
         setState(() {
-          _isLoading = false; // tắt loading
+          _isLoadingSwitch = false; // tắt loading
 
-          _pendingValue = null;
+          _pendingValueStatus = null;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Không điều khiển được thiết bị, vui lòng tắt chế độ Auto Mode hoặc phần cứng có vấn đề vui lòng kiểm tra!',
+              'Không điều khiển được thiết bị, vui lòng tắt chế độ Auto Mode hoặc kiểm tra lại mạng',
             ),
             duration: Duration(seconds: 8),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    });
+    Future.delayed(Duration(seconds: 30), () {
+      if (mounted && _isLoadingOnOff) {
+        setState(() {
+          _isLoadingOnOff = false; // tắt loading
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Không điều khiển được thiết bị, vui lòng tắt chế độ Auto Mode hoặc kiểm tra lại mạng',
+            ),
+            duration: Duration(seconds: 5),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -96,8 +126,9 @@ class _DeviceCardControlState
   @override
   Widget build(BuildContext context) {
     final bool displayValue =
-        _pendingValue ?? widget.status;
-
+        _pendingValueStatus ?? widget.status;
+    final bool isMismatch =
+        widget.status != widget.statusReal;
     return InkWell(
       onTap: widget.onTap,
       borderRadius: BorderRadius.circular(16),
@@ -137,11 +168,11 @@ class _DeviceCardControlState
                     Switch(
                       value: displayValue,
                       activeColor: widget.color,
-                      onChanged: _isLoading
+                      onChanged: _isLoadingSwitch
                           ? null
                           : _toggleDevice,
                     ),
-                    if (_isLoading)
+                    if (_isLoadingSwitch)
                       Positioned.fill(
                         child: Container(
                           color: Colors.white.withOpacity(
@@ -176,19 +207,55 @@ class _DeviceCardControlState
                   ),
                 ),
                 SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    widget.status ? "BẬT" : "TẮT",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: widget.status
-                          ? Colors.green
-                          : Colors.red,
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Text(
+                          widget.statusReal ? "BẬT" : "TẮT",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: isMismatch
+                                ? Colors
+                                      .orange // ⚠️ cảnh báo khi lệch
+                                : widget.statusReal
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                        ),
+                        if (_isLoadingOnOff)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.white
+                                  .withOpacity(0.5),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                      CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: widget.color,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
+                    if (isMismatch) ...[
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange,
+                        size: 28,
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
