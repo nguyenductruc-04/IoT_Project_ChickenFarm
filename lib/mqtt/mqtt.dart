@@ -64,14 +64,14 @@ class MqttService {
     client.connectionMessage = connMess;
 
     // Debug connect MQTT
-    /*try {
+    try {
       print("🔌 Đang kết nối tới MQTT...");
       await client.connect();
     } on Exception catch (e) {
       print("❌ Lỗi kết nối: $e");
       client.disconnect();
       return -1;
-    }*/
+    }
 
     if (client.connectionStatus!.state == MqttConnectionState.connected) {
       print('✅ MQTT client connected to AWS IoT');
@@ -107,9 +107,9 @@ class MqttService {
       client.subscribe(topicStatusPump, MqttQos.atLeastOnce);
 
       client.subscribe(topicRealStatusLed, MqttQos.atLeastOnce);
-      client.subscribe(topicRealStatusLed, MqttQos.atLeastOnce);
-      client.subscribe(topicRealStatusLed, MqttQos.atLeastOnce);
-      client.subscribe(topicRealStatusLed, MqttQos.atLeastOnce);
+      client.subscribe(topicRealStatusFan, MqttQos.atLeastOnce);
+      client.subscribe(topicRealStatusMotor, MqttQos.atLeastOnce);
+      client.subscribe(topicRealStatusPump, MqttQos.atLeastOnce);
 
       client.subscribe(topicThresholdLed, MqttQos.atLeastOnce);
       client.subscribe(topicThresholdFan, MqttQos.atLeastOnce);
