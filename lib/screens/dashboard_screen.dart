@@ -16,8 +16,7 @@ class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() =>
-      _DashboardScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
@@ -48,12 +47,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Future.delayed(Duration(seconds: 5), () {
       mqttService.requestRelay();
     });
-    _futureData = ApiService.fetchTemperatureData(
-      'esp32_01',
-    );
+    _futureData = ApiService.fetchTemperatureData('esp32_01');
     mqttService = MqttService(
-      awsEndpoint:
-          'a2wcwnaa9j6foi-ats.iot.us-east-1.amazonaws.com',
+      awsEndpoint: 'a2wcwnaa9j6foi-ats.iot.us-east-1.amazonaws.com',
       clientId: 'Flutter-client',
       port: 8883,
       onSensorUpdate: (temp, hum, level, cell) {
@@ -68,27 +64,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     mqttService.onRelayUpdate = (topic, status) {
       print("📩 Relay update from $topic => $status");
       setState(() {
-        if (topic == 'device/status/led')
-          statusLed = status;
-        if (topic == 'device/status/fan')
-          statusFan = status;
-        if (topic == 'device/status/motor')
-          statusMotor = status;
-        if (topic == 'device/status/pump')
-          statusPump = status;
+        if (topic == 'device/status/led') statusLed = status;
+        if (topic == 'device/status/fan') statusFan = status;
+        if (topic == 'device/status/motor') statusMotor = status;
+        if (topic == 'device/status/pump') statusPump = status;
       });
     };
     mqttService.onRelayRealUpdate = (topic, statusReal) {
       print("📩 Relay update from $topic => $statusReal");
       setState(() {
-        if (topic == 'device/status/real/led')
-          statusRealLed = statusReal;
-        if (topic == 'device/status/real/fan')
-          statusRealFan = statusReal;
-        if (topic == 'device/status/real/motor')
-          statusRealMotor = statusReal;
-        if (topic == 'device/status/real/pump')
-          statusRealPump = statusReal;
+        if (topic == 'device/status/real/led') statusRealLed = statusReal;
+        if (topic == 'device/status/real/fan') statusRealFan = statusReal;
+        if (topic == 'device/status/real/motor') statusRealMotor = statusReal;
+        if (topic == 'device/status/real/pump') statusRealPump = statusReal;
       });
     };
 
@@ -124,39 +112,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(16.0),
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Giám sát môi trường',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 12),
                     GridView(
-                      shrinkWrap:
-                          true, // <-- Bắt buộc để cuộn được
+                      shrinkWrap: true, // <-- Bắt buộc để cuộn được
                       physics:
                           NeverScrollableScrollPhysics(), // <-- Ngăn grid tự cuộn
-                      gridDelegate:
-                          SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount:
-                                MediaQuery.of(
-                                      context,
-                                    ).size.width >
-                                    900
-                                ? 4
-                                : 2,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 1.2,
-                          ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width > 900
+                            ? 4
+                            : 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.2,
+                      ),
                       children: [
                         DeviceCard(
                           title: 'Nhiệt độ',
-                          value:
-                              '${temperatureC.toStringAsFixed(1)} °C',
+                          value: '${temperatureC.toStringAsFixed(1)} °C',
                           unit: '°C',
                           icon: Icons.thermostat,
                           color: Colors.redAccent,
@@ -166,8 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               DeviceDetailScreen.routeName,
                               arguments: DetailArgs(
                                 title: 'Nhiệt độ',
-                                value:
-                                    '${temperatureC.toStringAsFixed(1)} °C',
+                                value: '${temperatureC.toStringAsFixed(1)} °C',
                                 description:
                                     'Nhiệt độ hiện tại đo bởi cảm biến.',
                                 icon: Icons.thermostat,
@@ -177,8 +154,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         DeviceCard(
                           title: 'Độ ẩm',
-                          value:
-                              '${humidity.toStringAsFixed(1)} %',
+                          value: '${humidity.toStringAsFixed(1)} %',
                           unit: '%',
                           icon: Icons.water_drop,
                           color: Colors.blueAccent,
@@ -188,10 +164,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               DeviceDetailScreen.routeName,
                               arguments: DetailArgs(
                                 title: 'Độ ẩm',
-                                value:
-                                    '${humidity.toStringAsFixed(1)} %',
-                                description:
-                                    'Độ ẩm không khí từ cảm biến.',
+                                value: '${humidity.toStringAsFixed(1)} %',
+                                description: 'Độ ẩm không khí từ cảm biến.',
                                 icon: Icons.water_drop,
                               ),
                             );
@@ -210,8 +184,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               arguments: DetailArgs(
                                 title: 'Mực nước',
                                 value: waterLevel,
-                                description:
-                                    'Mực nước trong bể/ao hiện tại.',
+                                description: 'Mực nước trong bể/ao hiện tại.',
                                 icon: Icons.waves,
                               ),
                             );
@@ -219,8 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         DeviceCard(
                           title: 'Mức thức ăn',
-                          value:
-                              '${loadcell.toStringAsFixed(0)} Kg',
+                          value: '${loadcell.toStringAsFixed(0)} g',
                           unit: 'Kg',
                           icon: Icons.inventory,
                           color: Colors.orange,
@@ -230,8 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               DeviceDetailScreen.routeName,
                               arguments: DetailArgs(
                                 title: 'Mức thức ăn',
-                                value:
-                                    '${loadcell.toStringAsFixed(0)} %',
+                                value: '${loadcell.toStringAsFixed(0)} %',
                                 description:
                                     'Dung lượng thức ăn còn lại trong khoang.',
                                 icon: Icons.inventory,
@@ -245,23 +216,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Biểu đồ nhiệt độ',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
                       height: 200,
-                      child: TemperatureChart(
-                        deviceId: 'esp32',
-                      ),
+                      child: TemperatureChart(deviceId: 'esp32'),
                     ),
                     SizedBox(height: 10),
                     Text(
                       'Biểu đồ độ ẩm',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleLarge,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
@@ -299,11 +264,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           secondaryTitle: 'nhiệt độ',
                           status: statusLed,
                           description: '',
-                          icon:
-                              Icons.lightbulb_circle_sharp,
+                          icon: Icons.lightbulb_circle_sharp,
                           mqttService: mqttService,
-                          topic:
-                              'device/automode/confirm/led',
+                          topic: 'device/automode/confirm/led',
                         ),
                       );
                     },
@@ -326,12 +289,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           title: 'Quạt gió',
                           secondaryTitle: 'độ ẩm',
                           status: statusFan,
-                          description:
-                              'Trạng thái hiện tại của quạt gió',
+                          description: 'Trạng thái hiện tại của quạt gió',
                           icon: Icons.air,
                           mqttService: mqttService,
-                          topic:
-                              'device/automode/confirm/fan',
+                          topic: 'device/automode/confirm/fan',
                         ),
                       );
                     },
@@ -354,12 +315,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           title: 'Bơm thức ăn',
                           secondaryTitle: 'cân nặng',
                           status: statusMotor,
-                          description:
-                              'Trạng thái hiện tại của bơm thức ăn',
+                          description: 'Trạng thái hiện tại của bơm thức ăn',
                           icon: Icons.settings,
                           mqttService: mqttService,
-                          topic:
-                              'device/automode/confirm/motor',
+                          topic: 'device/automode/confirm/motor',
                         ),
                       );
                     },
@@ -382,12 +341,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           title: 'Bơm nước',
                           secondaryTitle: 'mực nước',
                           status: statusPump,
-                          description:
-                              'Trạng thái hiện tại của bơm nước',
+                          description: 'Trạng thái hiện tại của bơm nước',
                           icon: Icons.water_drop_outlined,
                           mqttService: mqttService,
-                          topic:
-                              'device/automode/confirm/pump',
+                          topic: 'device/automode/confirm/pump',
                         ),
                       );
                     },
